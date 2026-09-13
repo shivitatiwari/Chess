@@ -1,0 +1,35 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "games": {
+      "$gameId": {
+        ".read": true,
+        ".write": "auth != null && ((!data.exists() && (newData.child('white/uid').val() == auth.uid || newData.child('black/uid').val() == auth.uid)) || (data.exists() && (data.child('white/uid').val() == auth.uid || data.child('black/uid').val() == auth.uid)))",
+        ".validate": "newData.hasChildren(['id','mode','status','createdAt','updatedAt','fen','turn','moveNumber','white','black'])"
+      }
+    },
+    "matchmaking": {
+      "standard": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+    "challengeInbox": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid && auth.token.firebase.sign_in_provider != 'anonymous'",
+        "$challengeId": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.uid == $uid || newData.child('fromUid').val() == auth.uid || data.child('fromUid').val() == auth.uid)"
+        }
+      }
+    },
+    "challengeOutbox": {
+      "$uid": {
+        ".read": "auth != null && auth.uid == $uid && auth.token.firebase.sign_in_provider != 'anonymous'",
+        "$challengeId": {
+          ".write": "auth != null && auth.token.firebase.sign_in_provider != 'anonymous' && (auth.uid == $uid || newData.child('toUid').val() == auth.uid || data.child('toUid').val() == auth.uid)"
+        }
+      }
+    }
+  }
+}

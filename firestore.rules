@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function permanentUser() { return signedIn() && request.auth.token.firebase.sign_in_provider != 'anonymous'; }
+
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if permanentUser() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+    match /usernames/{username} {
+      allow read: if permanentUser();
+      allow create: if permanentUser() && request.resource.data.uid == request.auth.uid;
+      allow update: if permanentUser() && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid;
+      allow delete: if false;
+    }
+    match /gameLogs/{gameId} {
+      allow create: if signedIn() && (request.resource.data.white.uid == request.auth.uid || request.resource.data.black.uid == request.auth.uid);
+      allow read, update: if signedIn() && (resource.data.white.uid == request.auth.uid || resource.data.black.uid == request.auth.uid);
+      match /moves/{moveId} {
+        function parentGame() { return get(/databases/$(database)/documents/gameLogs/$(gameId)); }
+        function participant() { return signedIn() && (parentGame().data.white.uid == request.auth.uid || parentGame().data.black.uid == request.auth.uid); }
+        allow read: if participant();
+        allow create: if participant() && request.resource.data.byUid == request.auth.uid;
+        allow update, delete: if false;
+      }
+    }
+  }
+}
